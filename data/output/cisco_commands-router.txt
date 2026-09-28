@@ -1,0 +1,47 @@
+ena
+conf t
+hostname BRouter
+ip routing
+int gi0/0
+description WAN
+ip address dhcp
+ip nat outside
+no shut
+ip nat inside source list 1 interface gi0/0 overload
+ip route 0.0.0.0 0.0.0.0 dhcp
+int gi0/1
+description LAN
+no ip address
+ip nat inside
+no shut
+int gi0/1.10
+encapsulation dot1Q 10
+ip address 192.168.10.254 255.255.255.0
+ip nat inside
+no shut
+access-list 1 permit 192.168.10.0 0.0.0.255
+int gi0/1.20
+encapsulation dot1Q 20
+ip address 192.168.20.254 255.255.255.0
+ip nat inside
+no shut
+access-list 1 permit 192.168.20.0 0.0.0.255
+int gi0/1.30
+encapsulation dot1Q 30
+ip address 192.168.30.254 255.255.255.0
+ip nat inside
+no shut
+access-list 1 permit 192.168.30.0 0.0.0.255
+int gi0/1.40
+encapsulation dot1Q 40
+ip address 192.168.40.254 255.255.255.0
+ip nat inside
+no shut
+access-list 1 permit 192.168.40.0 0.0.0.255
+int gi0/1.50
+encapsulation dot1Q 50
+ip address 192.168.50.254 255.255.255.0
+ip nat inside
+no shut
+access-list 1 permit 192.168.50.0 0.0.0.255
+copy r s
