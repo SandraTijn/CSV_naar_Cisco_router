@@ -42,6 +42,7 @@ class CSV_to_TXT_router():
                 if not line:
                     continue
 
+                # print(line)
                 network = line[0]
                 interface = line[1]
                 description = line[2]
@@ -49,6 +50,7 @@ class CSV_to_TXT_router():
                 ipadress = line[4]
                 subnetmask = line[5]
                 defaultgateway = line[6]
+
 
                 if network.lower() == "wan":
                     # output_file.write(f"\n")
@@ -65,43 +67,53 @@ class CSV_to_TXT_router():
                     output_file.write(f"no shut\n")
                     output_file.write(f"ip nat inside source list 1 interface {interface} overload\n")
 
-                    if not ipadress or ipadress.lower() == "dhcp":
+                    if not defaultgateway or defaultgateway.lower() == "dhcp":
                         output_file.write(f"ip route 0.0.0.0 0.0.0.0 dhcp\n")
                     else:
-                        output_file.write(f"ip route 0.0.0.0 0.0.0.0 {ipadress}\n")
+                        output_file.write(f"ip route 0.0.0.0 0.0.0.0 {defaultgateway}\n")
 
                 elif network.lower() == "lan":
-                    if vlan and vlan != 0:
+                    if vlan and vlan != "0":
                         # met vlan
-                        if interface not in lan_interfaces:
-                            # interface zelf zit niet in csv, dus aanmaken:
-                            lan_interfaces.append(interface)
-                            output_file.write(f"int {interface}\n")
-                            output_file.write(f"description LAN\n")
-                            output_file.write(f"no ip address\n")
+                        if interface:
+                            if interface not in lan_interfaces:
+                                # interface zelf zit niet in csv, dus aanmaken:
+                                lan_interfaces.append(interface)
+                                output_file.write(f"int {interface}\n")
+                                output_file.write(f"description LAN\n")
+                                output_file.write(f"no ip address\n")
+                                output_file.write(f"ip nat inside\n")
+                                output_file.write(f"no shut\n")
+
+                            output_file.write(f"int {interface}.{vlan}\n")
+                            output_file.write(f"encapsulation dot1Q {vlan}\n")
+                            output_file.write(f"ip address {ipadress} {subnetmask}\n")
                             output_file.write(f"ip nat inside\n")
                             output_file.write(f"no shut\n")
+                            output_file.write(f"access-list 1 permit {self.network_address(ipadress, subnetmask)} {self.wildcard_mask(subnetmask)}\n")
 
-                        output_file.write(f"int {interface}.{vlan}\n")
-                        output_file.write(f"encapsulation dot1Q {vlan}\n")
-                        output_file.write(f"ip address {ipadress} {subnetmask}\n")
-                        output_file.write(f"ip nat inside\n")
-                        output_file.write(f"no shut\n")
-                        output_file.write(f"access-list 1 permit {self.network_address(ipadress, subnetmask)} {self.wildcard_mask(subnetmask)}\n")
+                        if defaultgateway:
+                            output_file.write(f"ip route {ipadress} {subnetmask} {defaultgateway}\n")
 
-                        
-
-                    
                     else:
                         # zonder vlan
-                        output_file.write(f"int {interface}\n")
-                        output_file.write(f"description {description}\n")
-                        if ipadress:
-                            output_file.write(f"ip address {ipadress} {subnetmask}\n")
-                        else:
-                            output_file.write(f"no ip address\n")
-                        
-                        output_file.write(f"no shut\n")
+                        if interface:
+                            output_file.write(f"int {interface}\n")
+                            output_file.write(f"description {description}\n")
+
+                            if interface not in lan_interfaces:
+                                # interface zelf zit niet in csv, dus aanmaken:
+                                lan_interfaces.append(interface)
+                                output_file.write(f"ip nat inside\n")
+
+                            if ipadress:
+                                output_file.write(f"ip address {ipadress} {subnetmask}\n")
+                            else:
+                                output_file.write(f"no ip address\n")
+                            output_file.write(f"no shut\n")
+                        output_file.write(f"access-list 1 permit {self.network_address(ipadress, subnetmask)} {self.wildcard_mask(subnetmask)}\n")
+                        if defaultgateway:
+                            output_file.write(f"ip route {ipadress} {subnetmask} {defaultgateway}\n")
 
                 else:
                     print(f"line {line} cannot be parsed")
